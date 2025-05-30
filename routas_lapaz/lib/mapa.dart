@@ -10,6 +10,9 @@ import 'package:routas_lapaz/ayuda.dart';
 import 'package:routas_lapaz/mis_rutas.dart';
 import 'package:routas_lapaz/conoce.dart';
 import 'package:routas_lapaz/sugerencias.dart';
+
+import 'package:geolocator/geolocator.dart';
+
 class MapaLaPaz extends StatefulWidget {
   final String medio;
    final Map<String, dynamic>? rutaGuardada;
@@ -65,6 +68,10 @@ class _MapaLaPazState extends State<MapaLaPaz> {
   List<Edge> _edges = []; // Todas las aristas posibles
   List<Edge> _mstEdges = []; // Aristas que forman parte del MST
   bool _mostrandoMST = false;
+
+  //para ubicacion
+  bool _mostrarUbicacionActual = false;
+  LatLng? _ubicacionActual;
 
   // !!! IMPORTANTE: Reemplaza con la URL de tu API !!!
   // Si la API se ejecuta localmente y Flutter en emulador Android: http://10.0.2.2:PUERTO_API
@@ -128,6 +135,90 @@ void initState() {
   _actualizarCapaRutasYLabels();
 }
 
+  // Función para obtener la ubicación actual
+  Future<void> _obtenerUbicacionActual() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        bool? enabled = await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('GPS desactivado'),
+            content: Text('¿Quieres activar el servicio de ubicación?'),
+            actions: [
+              TextButton(
+                child: Text('Cancelar'),
+                onPressed: () => Navigator.pop(context, false),
+              ),
+              TextButton(
+                child: Text('Activar'),
+                onPressed: () => Navigator.pop(context, true),
+              ),
+            ],
+          ),
+        );
+        
+        if (enabled == true) {
+          serviceEnabled = await Geolocator.openLocationSettings();
+        }
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw Exception('Permisos de ubicación denegados');
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        await Geolocator.openAppSettings();
+        throw Exception('Permisos permanentemente denegados');
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.bestForNavigation,
+        timeLimit: Duration(seconds: 10),
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _ubicacionActual = LatLng(position.latitude, position.longitude);
+        print("Nueva ubicación establecida: $_ubicacionActual");
+      });
+    } catch (e) {
+      print("Error en _obtenerUbicacionActual: $e");
+      rethrow;
+    }
+  }
+
+  // Función para alternar la visibilidad de la ubicación
+  void _alternarUbicacionActual() async {
+    if (!_mostrarUbicacionActual) {
+      try {
+        Position posicion = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.best,
+        );
+        
+        setState(() {
+          _ubicacionActual = LatLng(posicion.latitude, posicion.longitude);
+          _mostrarUbicacionActual = true;
+        });
+        
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al obtener ubicación: $e')),
+        );
+      }
+    } else {
+      setState(() {
+        _mostrarUbicacionActual = false;
+        _ubicacionActual = null;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -145,7 +236,9 @@ void initState() {
       drawer: _buildDrawer(context),
       body: FlutterMap(
         options: MapOptions(
-          center: LatLng(-16.5, -68.11),
+          center: _ubicacionActual != null 
+              ? _ubicacionActual 
+              : LatLng(-16.5, -68.11),
           zoom: 12.7,
           onTap: (tapPosition, point) async {
             if (_mostrandoMST) {
@@ -158,14 +251,7 @@ void initState() {
               return;
             }
 
-            // MOSTRAR COORDENADAS EN CONSOLA
-            print('══════════════════════════════════════════════════');
-            print('Nuevo nodo agregado en coordenadas:');
-            print('Latitud: ${point.latitude}');
-            print('Longitud: ${point.longitude}');
-            print('══════════════════════════════════════════════════');
-
-            int nuevoNodoIndex = _nodos.length; // El índice que tendrá el nuevo nodo
+            int nuevoNodoIndex = _nodos.length;
 
             setState(() {
               _nodos.add(point);
@@ -173,21 +259,28 @@ void initState() {
             });
 
             if (_nodos.length > 1) {
-              // Conectar el nuevo nodo con todos los nodos existentes
+
               for (int i = 0; i < _nodos.length - 1; i++) {
-                // Usar el color del nodo existente para la ruta, o gestionar colores de otra forma
+                
                 await obtenerRutaGraphHopper(_nodos[i], point, _coloresNodos[i], i, nuevoNodoIndex);
               }
             }
           },
         ),
         children: [
+          // Capa de mapa base
           TileLayer(
             urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
             subdomains: const ['a', 'b', 'c'],
           ),
+          
+          // Capa de polilíneas (rutas)
           PolylineLayer(polylines: _rutas),
+          
+          // Capa de etiquetas de peso
           MarkerLayer(markers: _pesoLabels),
+          
+          // Capa de marcadores de nodos
           MarkerLayer(
             markers: _nodos.asMap().entries.map((entry) {
               return Marker(
@@ -196,8 +289,8 @@ void initState() {
                 height: 60,
                 child: GestureDetector(
                   onLongPress: () {
-                     if (_mostrandoMST) {
-                       ScaffoldMessenger.of(context).showSnackBar(
+                    if (_mostrandoMST) {
+                      ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text("Para eliminar puntos, primero muestra todas las rutas."),
                           duration: Duration(seconds: 3),
@@ -208,23 +301,49 @@ void initState() {
                     _mostrarDialogoEliminar(context, entry.key);
                   },
                   child: Center(
-                    child: widget.medio =='foot'?
-                    PeatonIcono(size:300, 
-                    color: _coloresNodos[entry.key],x:x/100,y:y/100) : AutoIcono(color: _coloresNodos[entry.key],x:x/100,y:y/100),
+                    child: widget.medio =='foot'
+                        ? PeatonIcono(size:300, color: _coloresNodos[entry.key], x:x/100, y:y/100)
+                        : AutoIcono(color: _coloresNodos[entry.key], x:x/100, y:y/100),
                   )
                 ),
               );
             }).toList(),
           ),
+          
+          // --- NUEVA CAPA PARA UBICACIÓN ACTUAL --- //
+          if (_mostrarUbicacionActual && _ubicacionActual != null)
+            MarkerLayer(
+              markers: [
+                Marker(
+                  point: _ubicacionActual!,
+                  width: 50,
+                  height: 50,
+                  child: const Icon(
+                    Icons.location_pin,
+                    color: Colors.red,
+                    size: 50,
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          FloatingActionButton(
+            heroTag: 'ubicacion',
+            onPressed: _alternarUbicacionActual,
+            child: Icon(
+              _mostrarUbicacionActual ? Icons.location_off : Icons.location_on,
+              color: Colors.white,
+            ),
+            backgroundColor: _mostrarUbicacionActual ? Colors.red : Colors.blue,
+          ),
           const SizedBox(height: 10),
           FloatingActionButton.extended(
             onPressed: () {
-               
+
               if (_nodos.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -269,13 +388,13 @@ void initState() {
           const SizedBox(height: 10),
           FloatingActionButton.extended(
             onPressed: () {
-               
+
               if (_nodos.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text("No hay rutas a guardar"),
                     duration: Duration(seconds: 2),
-                  ),
+                  )
                 );
               } else {
                 _guardarRutaActual(context);
@@ -308,7 +427,7 @@ void initState() {
             context,
             icon: Icons.directions_walk,
             title: 'Recorrido a pie',
-            isActive: widget.medio == 'foot', // Resalta si estamos en modo a pie
+            isActive: widget.medio == 'foot',
             onTap: () {
               if (widget.medio != 'foot') {
                 Navigator.pushReplacement(
@@ -326,7 +445,7 @@ void initState() {
             context,
             icon: Icons.directions_car,
             title: 'Recorrido en auto',
-            isActive: widget.medio == 'car', // Resalta si estamos en modo auto
+            isActive: widget.medio == 'car',
             onTap: () {
               if (widget.medio != 'car') {
                 Navigator.pushReplacement(
@@ -353,18 +472,136 @@ void initState() {
               );
             },
           ),
-          _buildMenuItem(
+          // Menú desplegable principal para "lugares"
+          _buildExpansionTile(
             context,
             icon: Icons.accessibility_new,
-            title: 'lugares',
-            isActive: false,
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
+            title: 'Lugares',
+            children: [
+              // Submenú para Comida
+              _buildExpansionTile(
                 context,
-                MaterialPageRoute(builder: (context) => const SugerenciasPage()),
-              );
-            },
+                icon: Icons.restaurant,
+                title: 'Comida',
+                children: [
+                  _buildSubMenuItem(
+                    context,
+                    icon: Icons.restaurant_menu,
+                    title: 'Mi Chola Restaurant',
+                    onTap: () => _agregarMarcador(
+                      context,
+                      const LatLng(-16.50830, -68.12847),
+                      Colors.red,
+                      'Mi Chola Restaurant',
+                    ),
+                  ),
+                  _buildSubMenuItem(
+                    context,
+                    icon: Icons.restaurant_menu,
+                    title: 'Brosso',
+                    onTap: () => _agregarMarcador(
+                      context,
+                      const LatLng(-16.50060, -68.13296),
+                      Colors.red,
+                      'Brosso',
+                    ),
+                  ),
+                  _buildSubMenuItem(
+                    context,
+                    icon: Icons.restaurant_menu,
+                    title: 'Mercado Lanza',
+                    onTap: () => _agregarMarcador(
+                      context,
+                      const LatLng(-16.4965, -68.1342),
+                      Colors.red,
+                      'Mercado Lanza',
+                    ),
+                  ),
+                ],
+              ),
+              // Submenú para Hoteles
+              _buildExpansionTile(
+                context,
+                icon: Icons.hotel,
+                title: 'Hoteles',
+                children: [
+                  _buildSubMenuItem(
+                    context,
+                    icon: Icons.king_bed,
+                    title: 'Hotel Presidente',
+                    onTap: () => _agregarMarcador(
+                      context,
+                      const LatLng(-16.49573, -68.14591),
+                      Colors.purple,
+                      'Hotel Presidente',
+                    ),
+                  ),
+                  _buildSubMenuItem(
+                    context,
+                    icon: Icons.king_bed,
+                    title: 'Casa Grande',
+                    onTap: () => _agregarMarcador(
+                      context,
+                      const LatLng(-16.5127, -68.1198),
+                      Colors.purple,
+                      'Casa Grande',
+                    ),
+                  ),
+                  _buildSubMenuItem(
+                    context,
+                    icon: Icons.king_bed,
+                    title: 'Hotel Europa',
+                    onTap: () => _agregarMarcador(
+                      context,
+                      const LatLng(-16.50226, -68.13085),
+                      Colors.purple,
+                      'Hotel Europa',
+                    ),
+                  ),
+                ],
+              ),
+              // Submenú para Lugares turísticos
+              _buildExpansionTile(
+                context,
+                icon: Icons.place,
+                title: 'Atracciones',
+                children: [
+                  _buildSubMenuItem(
+                    context,
+                    icon: Icons.landscape,
+                    title: 'Valle de la Luna',
+                    onTap: () => _agregarMarcador(
+                      context,
+                      const LatLng(-16.5525, -68.0697),
+                      Colors.blue,
+                      'Valle de la Luna',
+                    ),
+                  ),
+                  _buildSubMenuItem(
+                    context,
+                    icon: Icons.park,
+                    title: 'Parque Purapura',
+                    onTap: () => _agregarMarcador(
+                      context,
+                      const LatLng(-16.48526, -68.15180),
+                      Colors.blue,
+                      'Parque Purapura',
+                    ),
+                  ),
+                  _buildSubMenuItem(
+                    context,
+                    icon: Icons.church,
+                    title: 'San Francisco',
+                    onTap: () => _agregarMarcador(
+                      context,
+                      const LatLng(-16.49614, -68.13718),
+                      Colors.blue,
+                      'San Francisco',
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
           _buildMenuItem(
             context,
@@ -405,6 +642,103 @@ void initState() {
       ),
     );
   }
+
+  // Función para agregar marcadores al mapa
+  void _agregarMarcador(BuildContext context, LatLng coordenadas, Color color, String nombreLugar) {
+    Navigator.pop(context); // Cierra el drawer
+    
+    setState(() {
+      // Agrega el nuevo nodo
+      _nodos.add(coordenadas);
+      _coloresNodos.add(color);
+      
+      // Muestra un mensaje de confirmación
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Marcador de $nombreLugar agregado'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      
+      // Si hay más de un nodo, calcula las rutas
+      if (_nodos.length > 1) {
+        for (int i = 0; i < _nodos.length - 1; i++) {
+          obtenerRutaGraphHopper(
+            _nodos[i],
+            coordenadas,
+            _coloresNodos[i],
+            i,
+            _nodos.length - 1,
+          );
+        }
+      }
+    });
+  }
+
+  // Widget para ExpansionTile personalizado
+  Widget _buildExpansionTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required List<Widget> children,
+  }) {
+    bool isHovered = false;
+    
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return MouseRegion(
+          onEnter: (_) => setState(() => isHovered = true),
+          onExit: (_) => setState(() => isHovered = false),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isHovered ? const Color(0xFFECBDBF) : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: ExpansionTile(
+              leading: Icon(icon, color: const Color(0xFF3D8B7D)),
+              title: Text(title, style: const TextStyle(color: Colors.black87)),
+              children: children,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Widget para los ítems del submenú
+  Widget _buildSubMenuItem(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    bool isHovered = false;
+    
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return MouseRegion(
+          onEnter: (_) => setState(() => isHovered = true),
+          onExit: (_) => setState(() => isHovered = false),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isHovered ? const Color(0xFFECBDBF) : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: ListTile(
+              leading: Icon(icon, color: const Color(0xFF3D8B7D)),
+              title: Text(title, style: const TextStyle(color: Colors.black87)),
+              onTap: onTap,
+              contentPadding: const EdgeInsets.only(left: 64.0),
+              dense: true,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
 Future<void> _guardarRutaActual(BuildContext context) async {
   // Mostrar diálogo para ingresar el nombre
   final nombre = await showDialog<String>(
@@ -501,9 +835,9 @@ Future<void> _guardarRutaActual(BuildContext context) async {
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
               color: isActive
-                ? const Color(0xFFDBC557) // Amarillo para opción activa
+                ? const Color(0xFFDBC557)
                 : isHovered
-                    ? const Color(0xFFECBDBF) // Rosa claro para hover
+                    ? const Color(0xFFECBDBF)
                     : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
@@ -512,19 +846,19 @@ Future<void> _guardarRutaActual(BuildContext context) async {
               leading: Icon(
                 icon,
                 color: isActive
-                  ? const Color(0xFF17584C) // Verde oscuro para activo
+                  ? const Color(0xFF17584C)
                   : isHovered
-                      ? const Color(0xFF17584C) // Verde oscuro para hover
-                      : const Color(0xFF3D8B7D), // Verde normal
+                      ? const Color(0xFF17584C)
+                      : const Color(0xFF3D8B7D),
               ),
               title: Text(
                 title,
                 style: TextStyle(
                   color: isActive
-                    ? const Color(0xFF17584C) // Verde oscuro para activo
+                    ? const Color(0xFF17584C)
                     : isHovered
-                        ? const Color(0xFF17584C) // Verde oscuro para hover
-                        : Colors.black87, // Negro para normal
+                        ? const Color(0xFF17584C)
+                        : Colors.black87,
                   fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
