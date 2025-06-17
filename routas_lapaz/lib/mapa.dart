@@ -9,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:routas_lapaz/ayuda.dart';
 import 'package:routas_lapaz/mis_rutas.dart';
 import 'package:routas_lapaz/conoce.dart';
-import 'package:routas_lapaz/sugerencias.dart';
+
 
 import 'package:geolocator/geolocator.dart';
 
@@ -223,12 +223,12 @@ void initState() {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Mapa con rutas: ${widget.medio == 'foot' ? 'A pie' : 'En auto'}'),
+        title: Text('Mapa conFFFFFFFrutas: ${widget.medio == 'foot' ? 'A pie' : 'En auto'}'),
         leading: Builder(
           builder: (context) => IconButton(
             icon: const Icon(Icons.menu),
             onPressed: () {
-              Scaffold.of(context).openDrawer(); // Ahora sí funciona
+              Scaffold.of(context).openDrawer();
             },
           ),
         ),

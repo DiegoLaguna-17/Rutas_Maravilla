@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:routas_lapaz/mapa.dart';
 import 'package:routas_lapaz/conoce.dart';
 import 'package:routas_lapaz/ayuda.dart';
-import 'package:routas_lapaz/home.dart';
+import 'package:routas_lapaz/mapa_screen.dart';
 import 'package:routas_lapaz/sugerencias.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -253,11 +253,10 @@ class _MisRutasState extends State<MisRutas> {
             title: 'Recorrido a pie',
             isActive: false,
             onTap: () {
-              Navigator.pushReplacement(
+              Navigator.pushReplacementNamed(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const MapaLaPaz(medio: 'foot'),
-                ),
+                '/mapa',
+                arguments: {'medio': 'foot'},
               );
             },
           ),
@@ -270,7 +269,8 @@ class _MisRutasState extends State<MisRutas> {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const MapaLaPaz(medio: 'car'),
+                  builder: (context) => const MapaScreen(),
+                  settings: RouteSettings(arguments: {'medio': 'car'}),
                 ),
               );
             },
