@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:routas_lapaz/mapa.dart';
+
 import 'package:routas_lapaz/mis_rutas.dart';
 
 class Home extends StatefulWidget {
@@ -121,11 +121,10 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                         icon: Icons.directions_walk,
                         color: Color(0xFF8FBC91),
                         onPressed: () {
-                          Navigator.push(
+                          Navigator.pushReplacementNamed(
                             context,
-                            MaterialPageRoute(
-                              builder: (context) => const MapaLaPaz(medio: 'foot'),
-                            ),
+                            '/mapa',
+                            arguments: {'medio': 'foot'},
                           );
                         },
                       ),

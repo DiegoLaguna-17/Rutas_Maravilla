@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:routas_lapaz/mapa.dart';
+
 import 'package:routas_lapaz/ayuda.dart';
 import 'package:routas_lapaz/sugerencias.dart';
 import 'package:routas_lapaz/mis_rutas.dart';
+import 'package:routas_lapaz/mapa_screen.dart';
 
 class ConocePage extends StatelessWidget {
   const ConocePage({super.key});
@@ -129,27 +130,7 @@ class ConocePage extends StatelessWidget {
 
   
 
-  Widget _buildTipItem(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.star, size: 16, color: Color(0xFFDBC557)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                color: Color(0xFF17584C),
-                fontSize: 15,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildDrawer(BuildContext context) {
     return Drawer(
@@ -171,11 +152,10 @@ class ConocePage extends StatelessWidget {
             title: 'Recorrido a pie',
             isActive: false,
             onTap: () {
-              Navigator.pushReplacement(
+              Navigator.pushReplacementNamed(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const MapaLaPaz(medio: 'foot'),
-                ),
+                '/mapa',
+                arguments: {'medio': 'foot'},
               );
             },
           ),
@@ -188,7 +168,8 @@ class ConocePage extends StatelessWidget {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const MapaLaPaz(medio: 'car'),
+                  builder: (context) => const MapaScreen(),
+                  settings: RouteSettings(arguments: {'medio': 'car'}),
                 ),
               );
             },

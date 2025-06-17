@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:routas_lapaz/conoce.dart';
-import 'package:routas_lapaz/mapa.dart';
+
 import 'package:routas_lapaz/sugerencias.dart';
 import 'package:routas_lapaz/mis_rutas.dart';
+import 'package:routas_lapaz/mapa_screen.dart';
 
 class AyudaPage extends StatelessWidget {
   const AyudaPage({super.key});
@@ -246,11 +247,10 @@ class AyudaPage extends StatelessWidget {
             title: 'Recorrido a pie',
             isActive: false,
             onTap: () {
-              Navigator.pushReplacement(
+              Navigator.pushReplacementNamed(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const MapaLaPaz(medio: 'foot'),
-                ),
+                '/mapa',
+                arguments: {'medio': 'foot'},
               );
             },
           ),
@@ -263,7 +263,8 @@ class AyudaPage extends StatelessWidget {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const MapaLaPaz(medio: 'car'),
+                  builder: (context) => const MapaScreen(),
+                  settings: RouteSettings(arguments: {'medio': 'car'}),
                 ),
               );
             },
