@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:routas_lapaz/mapa_screen.dart';
-import 'package:routas_lapaz/home.dart';
+import 'package:routas_lapaz/mapa/mapa_screen.dart';
+import 'package:routas_lapaz/home/home_screen.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -12,14 +12,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ProviderScope(
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: Home(),
-        routes: {
-          '/mapa': (context) => const MapaScreen(),
-        },
-      ),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Rutas La Paz',
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const HomeScreen(),
+        '/mapa': (context) => const MapaScreen(),
+      },
     );
   }
 }

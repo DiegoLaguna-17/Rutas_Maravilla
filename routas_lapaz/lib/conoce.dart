@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:routas_lapaz/ayuda.dart';
 import 'package:routas_lapaz/sugerencias.dart';
-import 'package:routas_lapaz/mis_rutas.dart';
-import 'package:routas_lapaz/mapa_screen.dart';
+import 'package:routas_lapaz/mis_rutas/mis_rutas_screen.dart';
 
 class ConocePage extends StatelessWidget {
   const ConocePage({super.key});
@@ -45,21 +44,30 @@ class ConocePage extends StatelessWidget {
               _buildInfoCard(
                 context,
                 title: 'Introducción',
-                content: 'Esta aplicación revoluciona la forma de explorar La Paz, ofreciendo rutas optimizadas tanto para peatones como para vehículos. Utilizando algoritmos inteligentes como lo es el de Dijkstra para encontrar la ruta mas corta, asi mismo cuenta con una integración de datos en tiempo real acerca de las distintas rutas que tenemos en la ciudad de La Paz, calcula los mejores recorridos turísticos considerando tiempo, distancia y puntos de interés. Con solo marcar tus destinos en el mapa, el sistema crea automáticamente el itinerario perfecto.',
+                content:
+                    'Esta aplicación revoluciona la forma de explorar La Paz, generando recorridos turísticos optimizados en función del tiempo que toma desplazarse entre distintos puntos. '
+                    'Utiliza algoritmos avanzados como Kruskal para construir rutas eficientes conectando los destinos seleccionados con el menor tiempo total posible. '
+                    'Solo marca los lugares que deseas visitar, y el sistema se encarga del resto. Se integra además con datos actualizados para brindar una experiencia personalizada tanto para peatones como para vehículos.',
                 color: const Color(0xFFECBDBF),
               ),
               const SizedBox(height: 25),
               _buildInfoCard(
                 context,
                 title: 'Importancia',
-                content: 'En una ciudad con topografía única como lo es La Paz, planificar rutas eficientes es esencial. Nuestra solución:\n\n• Ahorra tiempo en desplazamientos entre dos o diversa cantidad de lugares\n• Reduce el estrés de navegar por calles desconocidas\n• Ofrece alternativas de rutas tanto para automoviles como de peatones\n• Preserva la esencia del turismo local mostrando los mejores lugares\n\nEs la herramienta perfecta tanto para turistas como para paceños que quieren redescubrir su ciudad.',
+                content:
+                    'En una ciudad con una topografía única como La Paz, planificar rutas eficientes es clave. Nuestra solución:\n\n'
+                    '• Ahorra tiempo en desplazamientos.\n'
+                    '• Reduce el estrés de navegar por zonas desconocidas.\n'
+                    '• Ofrece rutas adaptadas a peatones y automóviles.\n'
+                    '• Promueve el turismo local mostrando lo mejor de la ciudad.',
                 color: const Color(0xFFDBC557),
               ),
               const SizedBox(height: 25),
               _buildInfoCard(
                 context,
                 title: 'Objetivo',
-                content: 'Transformar la experiencia de movilidad en La Paz mediante tecnología intuitiva que conecta a las personas con los lugares más fascinantes de la ciudad, optimizando cada recorrido para crear momentos memorables sin preocupaciones logísticas.',
+                content:
+                    'Transformar la experiencia de movilidad en La Paz mediante tecnología intuitiva que conecta a las personas con los lugares más fascinantes, optimizando cada recorrido para disfrutar sin complicaciones.',
                 color: const Color(0xFF8FBC91),
               ),
               const SizedBox(height: 30),
@@ -70,6 +78,7 @@ class ConocePage extends StatelessWidget {
     );
   }
 
+  /// Título principal estilizado
   Widget _buildSectionTitle(String text) {
     return Text(
       text,
@@ -88,9 +97,16 @@ class ConocePage extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCard(BuildContext context, {required String title, required String content, required Color color}) {
+  /// Tarjetas de contenido informativo
+  Widget _buildInfoCard(
+    BuildContext context, {
+    required String title,
+    required String content,
+    required Color color,
+  }) {
     return Container(
       width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: color.withOpacity(0.8),
         borderRadius: BorderRadius.circular(15),
@@ -102,7 +118,6 @@ class ConocePage extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -128,10 +143,7 @@ class ConocePage extends StatelessWidget {
     );
   }
 
-  
-
-
-
+  /// Menú lateral de navegación
   Widget _buildDrawer(BuildContext context) {
     return Drawer(
       child: ListView(
@@ -151,28 +163,22 @@ class ConocePage extends StatelessWidget {
             icon: Icons.directions_walk,
             title: 'Recorrido a pie',
             isActive: false,
-            onTap: () {
-              Navigator.pushReplacementNamed(
-                context,
-                '/mapa',
-                arguments: {'medio': 'foot'},
-              );
-            },
+            onTap: () => Navigator.pushReplacementNamed(
+              context,
+              '/mapa',
+              arguments: {'medio': 'foot'},
+            ),
           ),
           _buildMenuItem(
             context,
             icon: Icons.directions_car,
             title: 'Recorrido en auto',
             isActive: false,
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const MapaScreen(),
-                  settings: RouteSettings(arguments: {'medio': 'car'}),
-                ),
-              );
-            },
+            onTap: () => Navigator.pushReplacementNamed(
+              context,
+              '/mapa',
+              arguments: {'medio': 'car'},
+            ),
           ),
           _buildMenuItem(
             context,
@@ -181,23 +187,19 @@ class ConocePage extends StatelessWidget {
             isActive: false,
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const MisRutas()),
-              );
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const MisRutasScreen()));
             },
           ),
           _buildMenuItem(
             context,
             icon: Icons.accessibility_new,
-            title: 'lugares',
+            title: 'Lugares',
             isActive: false,
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SugerenciasPage()),
-              );
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const SugerenciasPage()));
             },
           ),
           _buildMenuItem(
@@ -214,10 +216,8 @@ class ConocePage extends StatelessWidget {
             isActive: false,
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AyudaPage()),
-              );
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const AyudaPage()));
             },
           ),
           _buildMenuItem(
@@ -234,6 +234,7 @@ class ConocePage extends StatelessWidget {
     );
   }
 
+  /// Elemento individual del menú lateral
   Widget _buildMenuItem(
     BuildContext context, {
     required IconData icon,
@@ -242,7 +243,7 @@ class ConocePage extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     bool isHovered = false;
-    
+
     return StatefulBuilder(
       builder: (context, setState) {
         return MouseRegion(
@@ -250,33 +251,30 @@ class ConocePage extends StatelessWidget {
           onExit: (_) => setState(() => isHovered = false),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: isActive
-                ? const Color(0xFFDBC557)
-                : isHovered
-                    ? const Color(0xFFECBDBF)
-                    : Colors.transparent,
+                  ? const Color(0xFFDBC557)
+                  : isHovered
+                      ? const Color(0xFFECBDBF)
+                      : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
-            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: ListTile(
               leading: Icon(
                 icon,
-                color: isActive
-                  ? const Color(0xFF17584C)
-                  : isHovered
-                      ? const Color(0xFF17584C)
-                      : const Color(0xFF3D8B7D),
+                color: isActive || isHovered
+                    ? const Color(0xFF17584C)
+                    : const Color(0xFF3D8B7D),
               ),
               title: Text(
                 title,
                 style: TextStyle(
-                  color: isActive
-                    ? const Color(0xFF17584C)
-                    : isHovered
-                        ? const Color(0xFF17584C)
-                        : Colors.black87,
-                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                  color: isActive || isHovered
+                      ? const Color(0xFF17584C)
+                      : Colors.black87,
+                  fontWeight:
+                      isActive ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
               onTap: onTap,

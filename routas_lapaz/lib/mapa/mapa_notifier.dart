@@ -20,6 +20,7 @@ class MapaNotifier extends StateNotifier<MapaState> {
 
   // Cargar estado inicial desde datos guardados
   Future<void> cargarRutaGuardada(Map<String, dynamic>? rutaGuardada) async {
+    limpiarTodo();
     if (rutaGuardada == null) return;
 
     try {

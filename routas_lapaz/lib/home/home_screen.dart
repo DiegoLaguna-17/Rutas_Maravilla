@@ -1,17 +1,17 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
-import 'package:routas_lapaz/mis_rutas/mis_rutas_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../mis_rutas/mis_rutas_screen.dart';
 
-
-class Home extends StatefulWidget {
-  const Home({super.key});
+class HomeScreen extends ConsumerStatefulWidget {
+  const HomeScreen({super.key});
 
   @override
-  State<Home> createState() => _HomeState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
@@ -19,26 +19,26 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: const Interval(0, 0.5, curve: Curves.easeInOut),
       ),
     );
-    
+
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: const Interval(0.3, 1, curve: Curves.elasticOut),
       ),
     );
-    
+
     _animationController.forward();
   }
 
@@ -55,7 +55,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
 
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('assets/lapaz.jpg'),
             fit: BoxFit.cover,
@@ -63,7 +63,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: Color(0xFF3D8B7D).withOpacity(0.5), // Overlay semi-transparente
+            color: const Color(0xFF3D8B7D).withOpacity(0.5),
           ),
           child: Stack(
             children: [
@@ -77,15 +77,15 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                         child: ScaleTransition(
                           scale: _scaleAnimation,
                           child: Container(
-                            padding: EdgeInsets.all(20),
+                            padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: Color(0xFFF9DFE0).withOpacity(0.9),
+                              color: const Color(0xFFF9DFE0).withOpacity(0.9),
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withOpacity(0.2),
                                   blurRadius: 10,
-                                  offset: Offset(0, 4),
+                                  offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
@@ -95,14 +95,14 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                                   TextSpan(
                                     text: 'Explora ',
                                     style: theme.textTheme.displaySmall?.copyWith(
-                                      color: Color(0xFF3D8B7D),
+                                      color: const Color(0xFF3D8B7D),
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   TextSpan(
                                     text: 'La Paz',
                                     style: theme.textTheme.displaySmall?.copyWith(
-                                      color: Color(0xFFDBC557),
+                                      color: const Color(0xFFDBC557),
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -112,14 +112,12 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                           ),
                         ),
                       ),
-                      
                       SizedBox(height: screen.height * 0.15),
-                      
                       _buildActionButton(
                         context,
                         text: 'A Viajar',
                         icon: Icons.directions_walk,
-                        color: Color(0xFF8FBC91),
+                        color: const Color(0xFF8FBC91),
                         onPressed: () {
                           Navigator.pushReplacementNamed(
                             context,
@@ -128,14 +126,12 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                           );
                         },
                       ),
-                      
-                      SizedBox(height: 30),
-                      
+                      const SizedBox(height: 30),
                       _buildActionButton(
                         context,
                         text: 'Mis Rutas',
                         icon: Icons.alt_route,
-                        color: Color(0xFFECBDBF),
+                        color: const Color(0xFFECBDBF),
                         onPressed: () {
                           Navigator.push(
                             context,
@@ -169,7 +165,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
-          padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),
@@ -180,10 +176,10 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 28, color: Colors.black87),
-            SizedBox(width: 12),
+            const SizedBox(width: 12),
             Text(
               text,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
@@ -204,7 +200,7 @@ class _ParticlesPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final random = Random();
-    
+
     for (int i = 0; i < 30; i++) {
       final x = random.nextDouble() * size.width;
       final y = random.nextDouble() * size.height;

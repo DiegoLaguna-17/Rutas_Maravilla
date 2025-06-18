@@ -1,69 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:routas_lapaz/mapa.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:routas_lapaz/mis_rutas/mis_rutas_notifier.dart';
+import 'package:routas_lapaz/mapa/mapa_screen.dart';
+import 'package:routas_lapaz/sugerencias/sugerencias_page.dart';
+
 import 'package:routas_lapaz/conoce.dart';
 import 'package:routas_lapaz/ayuda.dart';
-import 'package:routas_lapaz/mapa/mapa_screen.dart';
-import 'package:routas_lapaz/sugerencias.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 
-class MisRutas extends StatefulWidget {
-  const MisRutas({super.key});
+class MisRutasScreen extends ConsumerWidget {
+  const MisRutasScreen({super.key});
 
   @override
-  State<MisRutas> createState() => _MisRutasState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rutas = ref.watch(misRutasProvider).rutas;
 
-class _MisRutasState extends State<MisRutas> {
-  List<Map<String, dynamic>> _rutasGuardadas = [];
-  
-  @override
-  void initState() {
-    super.initState();
-    _cargarRutasGuardadas();
-  }
-
-  Future<void> _cargarRutasGuardadas() async {
-    final prefs = await SharedPreferences.getInstance();
-    final rutasJson = prefs.getStringList('rutas_guardadas') ?? [];
-
-    setState(() {
-      _rutasGuardadas = rutasJson
-          .map((r) => jsonDecode(r) as Map<String, dynamic>)
-          .toList();
-    });
-  }
-
-  Future<void> _eliminarRuta(int index) async {
-    final prefs = await SharedPreferences.getInstance();
-    final rutasGuardadas = prefs.getStringList('rutas_guardadas') ?? [];
-    
-    if (index >= 0 && index < rutasGuardadas.length) {
-      rutasGuardadas.removeAt(index);
-      await prefs.setStringList('rutas_guardadas', rutasGuardadas);
-      _cargarRutasGuardadas(); // Recargar la lista
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ruta eliminada correctamente'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NO USAR'),
+        title: const Text('Mis Rutas Guardadas River'),
         backgroundColor: const Color(0xFF3D8B7D),
         leading: Builder(
           builder: (context) => IconButton(
             icon: const Icon(Icons.menu),
-            onPressed: () {
-              Scaffold.of(context).openDrawer();
-            },
+            onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
       ),
@@ -79,33 +37,38 @@ class _MisRutasState extends State<MisRutas> {
             ],
           ),
         ),
-        child: _rutasGuardadas.isEmpty
-          ? const Center(
-              child: Text(
-                'No hay rutas guardadas',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Color(0xFF17584C),
+        child: rutas.isEmpty
+            ? const Center(
+                child: Text(
+                  'No hay rutas guardadas',
+                  style: TextStyle(fontSize: 18, color: Color(0xFF17584C)),
                 ),
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              itemCount: _rutasGuardadas.length,
-              itemBuilder: (context, index) {
-                final ruta = _rutasGuardadas[index];
-                return _buildRutaCard(context, ruta, index);
+              )
+            : RefreshIndicator(
+              onRefresh: () async {
+                // Aquí llamamos a un método para refrescar la lista
+                await ref.read(misRutasProvider.notifier).cargarRutas(); 
+                // asegúrate que cargarRutas es un Future<void> que actualiza el estado
               },
+              child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  itemCount: rutas.length,
+                  itemBuilder: (context, index) {
+                    final ruta = rutas[index];
+                    return _buildRutaCard(context, ref, ruta, index);
+                  },
+                ),
             ),
       ),
     );
   }
 
-  Widget _buildRutaCard(BuildContext context, Map<String, dynamic> ruta, int index) {
-    final fecha = ruta['fecha'] != null 
+  Widget _buildRutaCard(BuildContext context, WidgetRef ref,
+      Map<String, dynamic> ruta, int index) {
+    final fecha = ruta['fecha'] != null
         ? DateTime.parse(ruta['fecha']).toLocal()
         : null;
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -144,7 +107,7 @@ class _MisRutasState extends State<MisRutas> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete, color: Color(0xFFECBDBF)),
-                    onPressed: () => _mostrarDialogoEliminar(index),
+                    onPressed: () => _mostrarDialogoEliminar(context, ref, index),
                   ),
                 ],
               ),
@@ -152,28 +115,26 @@ class _MisRutasState extends State<MisRutas> {
                 const SizedBox(height: 4),
                 Text(
                   'Creada: ${fecha.day}/${fecha.month}/${fecha.year} ${fecha.hour}:${fecha.minute.toString().padLeft(2, '0')}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.black54),
+                  style: const TextStyle(fontSize: 14, color: Colors.black54),
                 ),
               ],
               const SizedBox(height: 8),
               Row(
                 children: [
                   Icon(
-                    ruta['medio'] == 'foot' ? Icons.directions_walk : Icons.directions_car,
+                    ruta['medio'] == 'foot'
+                        ? Icons.directions_walk
+                        : Icons.directions_car,
                     color: const Color(0xFF3D8B7D),
                   ),
                   const SizedBox(width: 8),
                   Text(
                     ruta['medio'] == 'foot' ? 'A pie' : 'En auto',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF3D8B7D)),
+                    style: const TextStyle(fontSize: 14, color: Color(0xFF3D8B7D)),
                   ),
                   const Spacer(),
                   ElevatedButton(
-                    onPressed: () => _abrirRutaEnMapa(ruta),
+                    onPressed: () => _abrirRutaEnMapa(context, ruta),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFDBC557),
                       shape: RoundedRectangleBorder(
@@ -195,7 +156,7 @@ class _MisRutasState extends State<MisRutas> {
     );
   }
 
-  void _mostrarDialogoEliminar(int index) {
+  void _mostrarDialogoEliminar(BuildContext context, WidgetRef ref, int index) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -208,28 +169,30 @@ class _MisRutasState extends State<MisRutas> {
           ),
           TextButton(
             onPressed: () {
+              ref.read(misRutasProvider.notifier).eliminarRuta(index);
               Navigator.pop(context);
-              _eliminarRuta(index);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Ruta eliminada correctamente'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
             },
-            child: const Text(
-              'Eliminar',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
   }
 
-  void _abrirRutaEnMapa(Map<String, dynamic> ruta) {
-    Navigator.push(
+  void _abrirRutaEnMapa(BuildContext context, Map<String, dynamic> ruta) {
+    Navigator.pushNamed(
       context,
-      MaterialPageRoute(
-        builder: (context) => MapaLaPaz(
-          medio: ruta['medio'],
-          rutaGuardada: ruta,
-        ),
-      ),
+      '/mapa',
+      arguments:{
+         'medio': ruta['medio'],
+          'rutaGuardada': ruta,
+      }
     );
   }
 
@@ -266,12 +229,10 @@ class _MisRutasState extends State<MisRutas> {
             title: 'Recorrido en auto',
             isActive: false,
             onTap: () {
-              Navigator.pushReplacement(
+              Navigator.pushReplacementNamed(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const MapaScreen(),
-                  settings: RouteSettings(arguments: {'medio': 'car'}),
-                ),
+                '/mapa',
+                arguments: {'medio': 'car'},
               );
             },
           ),
@@ -280,7 +241,14 @@ class _MisRutasState extends State<MisRutas> {
             icon: Icons.alt_route,
             title: 'Mis Rutas',
             isActive: true,
-            onTap: () => Navigator.pop(context),
+            onTap: ()  {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MisRutasScreen()),
+              );
+            }
+
           ),
           _buildMenuItem(
             context,
@@ -388,4 +356,12 @@ class _MisRutasState extends State<MisRutas> {
       },
     );
   }
+
+  void _recargarPantalla(BuildContext context) {
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(builder: (context) => const MisRutasScreen()),
+  );
+}
+  
 }

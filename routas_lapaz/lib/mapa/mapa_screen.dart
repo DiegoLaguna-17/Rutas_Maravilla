@@ -5,7 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:routas_lapaz/formas.dart';
 import 'mapa_notifier.dart';
 import 'mapa_state.dart';
-import 'package:routas_lapaz/mis_rutas.dart';
+import 'package:routas_lapaz/mis_rutas/mis_rutas_screen.dart';
 import 'package:routas_lapaz/conoce.dart';
 import 'package:routas_lapaz/ayuda.dart';
 
@@ -19,11 +19,13 @@ class MapaScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    
     final routeArgs = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final medio = routeArgs?['medio'] ?? 'foot';
     
     final state = ref.watch(mapaProvider);
     final notifier = ref.read(mapaProvider.notifier);
+    
 
     // Cargar ruta guardada y actualizar medio después del build
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -50,7 +52,7 @@ class MapaScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Mapa con rutas: ${medio == 'foot' ? 'A pie' : 'En auto'}'),
+        title: Text('River: ${medio == 'foot' ? 'A pie' : 'En auto'}'),
         leading: Builder(
           builder: (context) => IconButton(
             icon: const Icon(Icons.menu),
@@ -277,7 +279,7 @@ class MapaScreen extends ConsumerWidget {
               Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const MisRutas()),
+                MaterialPageRoute(builder: (context) => const MisRutasScreen()),
               );
             },
           ),

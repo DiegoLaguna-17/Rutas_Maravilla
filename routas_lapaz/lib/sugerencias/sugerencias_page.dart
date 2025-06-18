@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:routas_lapaz/lugares/lugares_page.dart';
-import 'package:routas_lapaz/comida/comida_page.dart';
-import 'package:routas_lapaz/hoteles/hoteles_page.dart';
-import 'package:routas_lapaz/mis_rutas/mis_rutas_screen.dart';
-import 'package:routas_lapaz/conoce.dart';
-import 'package:routas_lapaz/ayuda.dart';
-import 'package:routas_lapaz/mapa/mapa_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:routas_lapaz/sugerencias/sugerencias_notifier.dart';
+import '../mapa/mapa_screen.dart';
+import '../mis_rutas/mis_rutas_screen.dart';
+import '../ayuda.dart';
+import '../conoce.dart';
 
-class SugerenciasPage extends StatelessWidget {
+class SugerenciasPage extends ConsumerWidget {
   const SugerenciasPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sugerencias = ref.watch(sugerenciasProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sugerencias en La Paz'),
+        title: const Text('Sugerencias en La Paz RIver'),
         backgroundColor: const Color(0xFF3D8B7D),
         leading: Builder(
           builder: (context) => IconButton(
@@ -31,48 +32,20 @@ class SugerenciasPage extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFF9DFE0),
-              Color(0xFF8FBC91),
-            ],
+            colors: [Color(0xFFF9DFE0), Color(0xFF8FBC91)],
           ),
         ),
         child: Center(
           child: SingleChildScrollView(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildSuggestionButton(
-                  context,
-                  imagePath: 'assets/lugares.jpg',
-                  text: 'Lugares Turísticos',
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LugaresPage()),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                _buildSuggestionButton(
-                  context,
-                  imagePath: 'assets/comida.jpg',
-                  text: 'Lugares de Comida',
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const ComidaPage()),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                _buildSuggestionButton(
-                  context,
-                  imagePath: 'assets/hoteles.jpg',
-                  text: 'Hoteles Recomendados',
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HotelesPage()),
-                  ),
-                ),
-                const SizedBox(height: 40),
-              ],
+              children: sugerencias.map((sug) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: _buildSuggestionButton(context,
+                      imagePath: sug.imagePath, text: sug.titulo, page: sug.page),
+                );
+              }).toList(),
             ),
           ),
         ),
@@ -80,11 +53,10 @@ class SugerenciasPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSuggestionButton(BuildContext context, {
-    required String imagePath,
-    required String text,
-    required VoidCallback onPressed,
-  }) {
+  Widget _buildSuggestionButton(BuildContext context,
+      {required String imagePath,
+      required String text,
+      required Widget page}) {
     return SizedBox(
       width: 280,
       child: Column(
@@ -112,7 +84,12 @@ class SugerenciasPage extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           ElevatedButton(
-            onPressed: onPressed,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => page),
+              );
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF3D8B7D).withOpacity(0.9),
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
@@ -142,9 +119,7 @@ class SugerenciasPage extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           const DrawerHeader(
-            decoration: BoxDecoration(
-              color: Color(0xFF3D8B7D),
-            ),
+            decoration: BoxDecoration(color: Color(0xFF3D8B7D)),
             child: Text(
               'Opciones de Rutas',
               style: TextStyle(color: Colors.white, fontSize: 24),
@@ -154,7 +129,6 @@ class SugerenciasPage extends StatelessWidget {
             context,
             icon: Icons.directions_walk,
             title: 'Recorrido a pie',
-            isActive: false,
             onTap: () {
               Navigator.pushReplacementNamed(
                 context,
@@ -167,13 +141,12 @@ class SugerenciasPage extends StatelessWidget {
             context,
             icon: Icons.directions_car,
             title: 'Recorrido en auto',
-            isActive: false,
             onTap: () {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
                   builder: (context) => const MapaScreen(),
-                  settings: RouteSettings(arguments: {'medio': 'car'}),
+                  settings: const RouteSettings(arguments: {'medio': 'car'}),
                 ),
               );
             },
@@ -182,24 +155,21 @@ class SugerenciasPage extends StatelessWidget {
             context,
             icon: Icons.alt_route,
             title: 'Mis Rutas',
-            isActive: false,
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const MisRutasScreen()),
+                MaterialPageRoute(builder: (_) => const MisRutasScreen()),
               );
             },
           ),
           _buildMenuItem(
             context,
             icon: Icons.accessibility_new,
-            title: 'lugares',
-            isActive: true,
+            title: 'Lugares',
             onTap: () {
-              Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const SugerenciasPage()),
+                MaterialPageRoute(builder: (_) => const SugerenciasPage()),
               );
             },
           ),
@@ -207,12 +177,10 @@ class SugerenciasPage extends StatelessWidget {
             context,
             icon: Icons.info,
             title: 'Conoce más',
-            isActive: false,
             onTap: () {
-              Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const ConocePage()),
+                MaterialPageRoute(builder: (_) => const ConocePage()),
               );
             },
           ),
@@ -220,12 +188,10 @@ class SugerenciasPage extends StatelessWidget {
             context,
             icon: Icons.help,
             title: 'Ayuda',
-            isActive: false,
             onTap: () {
-              Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const AyudaPage()),
+                MaterialPageRoute(builder: (_) => const AyudaPage()),
               );
             },
           ),
@@ -233,7 +199,6 @@ class SugerenciasPage extends StatelessWidget {
             context,
             icon: Icons.exit_to_app,
             title: 'Salir',
-            isActive: false,
             onTap: () {
               Navigator.popUntil(context, (route) => route.isFirst);
             },
@@ -247,11 +212,10 @@ class SugerenciasPage extends StatelessWidget {
     BuildContext context, {
     required IconData icon,
     required String title,
-    required bool isActive,
     required VoidCallback onTap,
   }) {
     bool isHovered = false;
-    
+
     return StatefulBuilder(
       builder: (context, setState) {
         return MouseRegion(
@@ -259,33 +223,21 @@ class SugerenciasPage extends StatelessWidget {
           onExit: (_) => setState(() => isHovered = false),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: isActive
-                ? const Color(0xFFDBC557)
-                : isHovered
-                    ? const Color(0xFFECBDBF)
-                    : Colors.transparent,
+              color: isHovered ? const Color(0xFFECBDBF) : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
-            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: ListTile(
-              leading: Icon(
-                icon,
-                color: isActive
-                  ? const Color(0xFF17584C)
-                  : isHovered
+              leading: Icon(icon,
+                  color: isHovered
                       ? const Color(0xFF17584C)
-                      : const Color(0xFF3D8B7D),
-              ),
+                      : const Color(0xFF3D8B7D)),
               title: Text(
                 title,
                 style: TextStyle(
-                  color: isActive
-                    ? const Color(0xFF17584C)
-                    : isHovered
-                        ? const Color(0xFF17584C)
-                        : Colors.black87,
-                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                  color: isHovered ? const Color(0xFF17584C) : Colors.black87,
+                  fontWeight: isHovered ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
               onTap: onTap,

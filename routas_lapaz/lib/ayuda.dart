@@ -3,7 +3,7 @@ import 'package:routas_lapaz/conoce.dart';
 
 import 'package:routas_lapaz/sugerencias.dart';
 import 'package:routas_lapaz/mis_rutas.dart';
-import 'package:routas_lapaz/mapa_screen.dart';
+import 'package:routas_lapaz/mapa/mapa_screen.dart';
 
 class AyudaPage extends StatelessWidget {
   const AyudaPage({super.key});

@@ -223,7 +223,7 @@ void initState() {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Mapa conFFFFFFFrutas: ${widget.medio == 'foot' ? 'A pie' : 'En auto'}'),
+        title: Text('NO USAR'),
         leading: Builder(
           builder: (context) => IconButton(
             icon: const Icon(Icons.menu),
